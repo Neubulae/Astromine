@@ -30,22 +30,22 @@ import net.minecraft.recipe.Ingredient;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 
-import com.github.chainmailstudios.astromine.common.block.entity.base.DefaultedBlockEntity;
+import com.github.chainmailstudios.astromine.common.block.entity.base.ComponentBlockEntity;
 
 public interface AdvancedRecipe<C extends Inventory> extends AstromineRecipe<C> {
-	<T extends DefaultedBlockEntity> boolean canCraft(T t);
+	<T extends ComponentBlockEntity> boolean canCraft(T t);
 
-	<T extends DefaultedBlockEntity> void craft(T t);
+	<T extends ComponentBlockEntity> void craft(T t);
 
 	<T extends RecipeConsumer> void tick(T t);
 
 	@Override
-	default boolean matches(C inv, World world) {
+	default boolean matches(C inventory, World world) {
 		return false;
 	}
 
 	@Override
-	default ItemStack craft(C inv) {
+	default ItemStack craft(C inventory) {
 		return ItemStack.EMPTY;
 	}
 

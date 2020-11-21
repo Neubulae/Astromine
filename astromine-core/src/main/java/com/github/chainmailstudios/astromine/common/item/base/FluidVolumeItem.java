@@ -24,43 +24,25 @@
 
 package com.github.chainmailstudios.astromine.common.item.base;
 
-import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Formatting;
-import net.minecraft.world.World;
 
-import com.github.chainmailstudios.astromine.common.component.inventory.FluidInventoryComponent;
-import com.github.chainmailstudios.astromine.common.fraction.Fraction;
-import com.github.chainmailstudios.astromine.registry.AstromineComponentTypes;
-import nerdhub.cardinal.components.api.component.ComponentProvider;
+import com.github.chainmailstudios.astromine.common.volume.fluid.FluidVolume;
+import com.github.chainmailstudios.astromine.common.volume.fraction.Fraction;
 
-import java.util.List;
+public class FluidVolumeItem extends BaseVolumeItem<FluidVolume> {
+	private final Fraction size;
 
-public class FluidVolumeItem extends BaseVolumeItem {
-	public FluidVolumeItem(Settings settings) {
+	private FluidVolumeItem(Item.Settings settings, Fraction size) {
 		super(settings);
+
+		this.size = size;
 	}
 
 	public static FluidVolumeItem of(Item.Settings settings, Fraction size) {
-		FluidVolumeItem item = new FluidVolumeItem(settings);
-		item.size = size;
-		return item;
+		return new FluidVolumeItem(settings, size);
 	}
 
-	@Override
-	public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-		super.appendTooltip(stack, world, tooltip, context);
-
-		FluidInventoryComponent fluidComponent = ComponentProvider.fromItemStack(stack).getComponent(AstromineComponentTypes.FLUID_INVENTORY_COMPONENT);
-
-		fluidComponent.getContents().forEach((key, value) -> {
-			tooltip.add(new LiteralText("- " + value.getFraction().toFractionalString() + " | " + new TranslatableText(value.getFluid().getDefaultState().getBlockState().getBlock().getTranslationKey()).getString()).formatted(Formatting.GRAY));
-		});
-
-		tooltip.add(new TranslatableText("text.astromine.experimental_feature_canister").formatted(Formatting.RED, Formatting.BOLD, Formatting.ITALIC));
+	public Fraction getSize() {
+		return size;
 	}
 }

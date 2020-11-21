@@ -25,101 +25,159 @@
 package com.github.chainmailstudios.astromine.common.volume.energy;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.Identifier;
 
-import com.github.chainmailstudios.astromine.common.fraction.Fraction;
+import com.github.chainmailstudios.astromine.AstromineCommon;
+import com.github.chainmailstudios.astromine.common.component.inventory.SimpleEnergyComponent;
+import com.github.chainmailstudios.astromine.common.volume.base.Volume;
 
-public class EnergyVolume {
-	public static final double OLD_NEW_RATIO = 1000;
-	private Runnable listener;
-	private double amount;
-	private double maxAmount = Double.MAX_VALUE;
+import com.google.common.base.Objects;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
-	public EnergyVolume() {
-		this(0);
+public class EnergyVolume extends Volume<Identifier, Double> {
+	public static final Identifier ID = AstromineCommon.identifier("energy");
+
+	protected EnergyVolume(double amount, double size) {
+		super(ID, amount, size);
 	}
 
-	public EnergyVolume(double amount) {
-		this.amount = amount;
-	}
-
-	public EnergyVolume(double amount, Runnable listener) {
-		this(amount);
-		this.listener = listener;
+	protected EnergyVolume(double amount, double size, Runnable runnable) {
+		super(ID, amount, size, runnable);
 	}
 
 	public static EnergyVolume empty() {
-		return new EnergyVolume();
+		return new EnergyVolume(0.0D, 0.0D);
+	}
+
+	public static EnergyVolume of(SimpleEnergyComponent component) {
+		return new EnergyVolume(0.0D, 0.0D, component::updateListeners);
+	}
+
+	public static EnergyVolume of(double size, SimpleEnergyComponent component) {
+		return new EnergyVolume(0.0D, size, component::updateListeners);
 	}
 
 	public static EnergyVolume of(double amount) {
-		return new EnergyVolume(amount);
+		return new EnergyVolume(amount, Long.MAX_VALUE);
 	}
 
-	public void setAmount(double amount) {
-		this.amount = MathHelper.clamp(amount, 0, getMaxAmount());
-		if (listener != null)
-			listener.run();
+	public static EnergyVolume of(double amount, double size) {
+		return new EnergyVolume(amount, size);
 	}
 
-	public double getAmount() {
-		return amount;
-	}
-
-	public void setMaxAmount(double maxAmount) {
-		this.maxAmount = maxAmount;
-		if (listener != null)
-			listener.run();
-	}
-
-	public double getMaxAmount() {
-		return maxAmount;
-	}
-
-	/**
-	 * Deserializes a Volume from a tag.
-	 *
-	 * @return a Volume
-	 */
 	public static EnergyVolume fromTag(CompoundTag tag) {
-		EnergyVolume energyVolume = new EnergyVolume();
-
-		if (!tag.contains("fraction")) {
-			if (tag.contains("amount"))
-				energyVolume.amount = tag.getDouble("amount");
-		} else {
-			energyVolume.amount = Fraction.fromTag(tag.getCompound("fraction")).doubleValue() * OLD_NEW_RATIO;
-		}
-
-		if (!tag.contains("size")) {
-			if (tag.contains("maxAmount"))
-				energyVolume.maxAmount = tag.getDouble("maxAmount");
-		} else {
-			energyVolume.maxAmount = Fraction.fromTag(tag.getCompound("size")).doubleValue() * OLD_NEW_RATIO;
-		}
-
-		return energyVolume;
+		return of(tag.getDouble("amount"), tag.getDouble("size"));
 	}
 
-	public EnergyVolume copy() {
-		return new EnergyVolume(getMaxAmount());
+	public static EnergyVolume fromJson(JsonElement jsonElement) {
+		if (!jsonElement.isJsonObject())
+			return EnergyVolume.of(jsonElement.getAsDouble());
+		else {
+			JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+			if (!jsonObject.has("amount")) {
+				return null;
+			} else {
+				if (!jsonObject.has("size")) {
+					return EnergyVolume.of(jsonObject.get("amount").getAsDouble());
+				} else {
+					return EnergyVolume.of(jsonObject.get("amount").getAsDouble(), jsonObject.get("size").getAsDouble());
+				}
+			}
+		}
 	}
 
-	public CompoundTag toTag(CompoundTag tag) {
+	public static EnergyVolume fromPacket(PacketByteBuf buffer) {
+		if (!buffer.readBoolean()) {
+			return empty();
+		} else {
+			return EnergyVolume.of(buffer.readDouble(), buffer.readDouble());
+		}
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Double>> V add(V v, Double doubleA) {
+		if (!(v instanceof EnergyVolume))
+			return (V) this;
+
+		double amount = Math.min(v.getSize() - v.getAmount(), Math.min(getAmount(), doubleA));
+
+		if (amount > 0.0D) {
+			v.setAmount(v.getAmount() + amount);
+			setAmount(getAmount() - amount);
+		}
+
+		return (V) this;
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Double>> V add(Double aDouble) {
+		double amount = Math.min(getSize() - getAmount(), aDouble);
+
+		setAmount(getAmount() + amount);
+
+		return (V) this;
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Double>> V minus(Double aDouble) {
+		double amount = Math.min(getAmount(), aDouble);
+
+		setAmount(getAmount() - amount);
+
+		return (V) this;
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Double>> V moveFrom(V v, Double doubleA) {
+		if (!(v instanceof EnergyVolume))
+			return (V) this;
+
+		v.add(this, doubleA);
+
+		return (V) this;
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Double>> V moveFrom(V v) {
+		return moveFrom(v, v.getAmount());
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Double>> V copy() {
+		return (V) of(getAmount(), getSize());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(super.hashCode(), getAmount(), getSize());
+	}
+
+	@Override
+	public String toString() {
+		return getAmount() + " / " + getSize();
+	}
+
+	@Override
+	public CompoundTag toTag() {
+		CompoundTag tag = new CompoundTag();
 		tag.putDouble("amount", getAmount());
-		tag.putDouble("maxAmount", getMaxAmount());
+		tag.putDouble("size", getSize());
 		return tag;
 	}
 
-	public boolean isEmpty() {
-		return getAmount() <= 0.0;
-	}
+	public PacketByteBuf toPacket(PacketByteBuf buffer) {
+		if (this.isEmpty()) {
+			buffer.writeBoolean(false);
+		} else {
+			buffer.writeBoolean(true);
 
-	public boolean isFull() {
-		return getAmount() >= getMaxAmount();
-	}
+			buffer.writeDouble(getAmount());
+			buffer.writeDouble(getSize());
+		}
 
-	public boolean hasAvailable(double produced) {
-		return getMaxAmount() - getAmount() >= produced;
+		return buffer;
 	}
 }

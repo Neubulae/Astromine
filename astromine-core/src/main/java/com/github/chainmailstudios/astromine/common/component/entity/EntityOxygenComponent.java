@@ -29,35 +29,47 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 
-import com.github.chainmailstudios.astromine.common.registry.BreathableRegistry;
-import com.github.chainmailstudios.astromine.common.volume.fluid.FluidVolume;
-import nerdhub.cardinal.components.api.component.Component;
+import com.github.chainmailstudios.astromine.registry.AstromineComponents;
+import com.github.chainmailstudios.astromine.registry.AstromineConfig;
+import dev.onyxstudios.cca.api.v3.component.Component;
+import org.jetbrains.annotations.Nullable;
 
 public class EntityOxygenComponent implements Component {
-	int oxygen;
+	int oxygen = 0;
 
 	int minimumOxygen = -20;
 	int maximumOxygen = -180;
 
 	Entity entity;
 
-	public EntityOxygenComponent(int oxygen, Entity entity) {
-		this.oxygen = oxygen;
+	public EntityOxygenComponent(Entity entity) {
 		this.entity = entity;
 	}
 
+	public static EntityOxygenComponent defaulted(Entity entity) {
+		return new EntityOxygenComponent(entity);
+	}
+
+	@Nullable
+	public static <V> EntityOxygenComponent get(V v) {
+		try {
+			return AstromineComponents.ENTITY_OXYGEN_COMPONENT.get(v);
+		} catch (Exception justShutUpAlready) {
+			return null;
+		}
+	}
+
 	@Override
-	public void fromTag(CompoundTag tag) {
+	public void readFromNbt(CompoundTag tag) {
 		this.oxygen = tag.getInt("oxygen");
 	}
 
 	@Override
-	public CompoundTag toTag(CompoundTag tag) {
+	public void writeToNbt(CompoundTag tag) {
 		tag.putInt("oxygen", oxygen);
-		return tag;
 	}
 
-	public void simulate(FluidVolume atmosphereVolume) {
+	public void simulate(boolean isBreathing) {
 		if (entity instanceof PlayerEntity) {
 			PlayerEntity player = (PlayerEntity) entity;
 
@@ -66,15 +78,17 @@ public class EntityOxygenComponent implements Component {
 			}
 		}
 
-		if (BreathableRegistry.INSTANCE.containsKey(entity.getType())) {
-			if (!BreathableRegistry.INSTANCE.canBreathe(entity.getType(), atmosphereVolume.getFluid())) {
-				oxygen = nextOxygen(false, oxygen);
-			} else {
-				oxygen = nextOxygen(true, oxygen);
+		oxygen = nextOxygen(isBreathing, oxygen);
+
+		if (oxygen == getMinimumOxygen()) {
+			boolean isAK9 = false;
+
+			if (entity instanceof PlayerEntity) {
+				isAK9 = ((PlayerEntity) entity).getGameProfile().getId().toString().equals("38113444-0bc0-4502-9a4c-17903067907c");
 			}
 
-			if (oxygen == getMinimumOxygen()) {
-				entity.damage(DamageSource.GENERIC, 1.0F);
+			if (!isAK9 || AstromineConfig.get().asphyxiateAK9) {
+				entity.damage(DamageSource.DROWN, 1.0F);
 			}
 		}
 	}

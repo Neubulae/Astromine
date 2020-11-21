@@ -34,12 +34,11 @@ import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
+import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
@@ -51,18 +50,8 @@ import com.github.chainmailstudios.astromine.AstromineCommon;
 import java.util.function.Function;
 
 public class ClientUtilities {
-	public static void addEntity(PersistentProjectileEntity persistentProjectileEntity) {
-		MinecraftClient.getInstance().world.addEntity(persistentProjectileEntity.getEntityId(), persistentProjectileEntity);
-	}
-
 	public static void playSound(BlockPos position, SoundEvent sound, SoundCategory category, float volume, float pitch, boolean useDistance) {
 		MinecraftClient.getInstance().world.playSoundFromEntity(MinecraftClient.getInstance().player, MinecraftClient.getInstance().player, sound, category, volume, pitch);
-	}
-
-	public static final class Weapon {
-		public static boolean isAiming() {
-			return MinecraftClient.getInstance().options.keyUse.isPressed();
-		}
 	}
 
 	@Environment(EnvType.CLIENT)
@@ -73,7 +62,7 @@ public class ClientUtilities {
 
 		final Sprite[] fluidSprites = { null, null };
 
-		ClientSpriteRegistryCallback.event(SpriteAtlasTexture.BLOCK_ATLAS_TEX).register((atlasTexture, registry) -> {
+		ClientSpriteRegistryCallback.event(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).register((atlasTexture, registry) -> {
 			registry.register(stillSpriteIdentifier);
 			registry.register(flowingSpriteIdentifier);
 		});
@@ -86,7 +75,7 @@ public class ClientUtilities {
 
 			@Override
 			public void apply(ResourceManager resourceManager) {
-				final Function<Identifier, Sprite> atlas = MinecraftClient.getInstance().getSpriteAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+				final Function<Identifier, Sprite> atlas = MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE);
 				fluidSprites[0] = atlas.apply(stillSpriteIdentifier);
 				fluidSprites[1] = atlas.apply(flowingSpriteIdentifier);
 			}

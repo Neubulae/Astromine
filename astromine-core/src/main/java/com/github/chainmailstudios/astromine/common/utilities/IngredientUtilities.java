@@ -27,32 +27,45 @@ package com.github.chainmailstudios.astromine.common.utilities;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.recipe.Ingredient;
 
-import com.github.chainmailstudios.astromine.common.recipe.BetterIngredient;
+import com.github.chainmailstudios.astromine.common.recipe.ingredient.ArrayIngredient;
+import com.github.chainmailstudios.astromine.common.recipe.ingredient.FluidIngredient;
 
 import com.google.gson.JsonElement;
 
 public class IngredientUtilities {
-	public static Ingredient fromJson(JsonElement jsonElement) {
+	public static Ingredient fromIngredientJson(JsonElement jsonElement) {
 		return Ingredient.fromJson(jsonElement);
 	}
 
-	public static BetterIngredient fromBetterJson(JsonElement jsonElement) {
-		return BetterIngredient.fromJson(jsonElement);
-	}
-
-	public static Ingredient fromPacket(PacketByteBuf buffer) {
+	public static Ingredient fromIngredientPacket(PacketByteBuf buffer) {
 		return Ingredient.fromPacket(buffer);
 	}
 
-	public static void toPacket(PacketByteBuf buffer, Ingredient ingredient) {
+	public static void toIngredientPacket(PacketByteBuf buffer, Ingredient ingredient) {
 		ingredient.write(buffer);
 	}
 
-	public static BetterIngredient fromBetterPacket(PacketByteBuf buffer) {
-		return BetterIngredient.fromPacket(buffer);
+	public static ArrayIngredient fromArrayIngredientJson(JsonElement jsonElement) {
+		return ArrayIngredient.fromJson(jsonElement);
 	}
 
-	public static void toBetterPacket(PacketByteBuf buffer, BetterIngredient ingredient) {
+	public static ArrayIngredient fromArrayIngredientPacket(PacketByteBuf buffer) {
+		return ArrayIngredient.fromPacket(buffer);
+	}
+
+	public static void toArrayIngredientPacket(PacketByteBuf buffer, ArrayIngredient ingredient) {
+		ingredient.write(buffer);
+	}
+
+	public static FluidIngredient fromFluidIngredientJson(JsonElement jsonElement) {
+		return FluidIngredient.fromJson(jsonElement);
+	}
+
+	public static FluidIngredient fromFluidIngredientPacket(PacketByteBuf buffer) {
+		return FluidIngredient.fromPacket(buffer);
+	}
+
+	public static void toFluidIngredientPacket(PacketByteBuf buffer, FluidIngredient ingredient) {
 		ingredient.write(buffer);
 	}
 }

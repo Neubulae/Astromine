@@ -27,120 +27,102 @@ package com.github.chainmailstudios.astromine.common.volume.fluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 
-import com.github.chainmailstudios.astromine.common.component.inventory.SimpleFluidInventoryComponent;
-import com.github.chainmailstudios.astromine.common.fraction.Fraction;
-import com.github.chainmailstudios.astromine.common.volume.BaseVolume;
-import com.github.chainmailstudios.astromine.registry.AstromineFluids;
+import com.github.chainmailstudios.astromine.AstromineCommon;
+import com.github.chainmailstudios.astromine.common.component.inventory.SimpleFluidComponent;
+import com.github.chainmailstudios.astromine.common.utilities.FractionUtilities;
+import com.github.chainmailstudios.astromine.common.volume.base.Volume;
+import com.github.chainmailstudios.astromine.common.volume.fraction.Fraction;
 
 import com.google.common.base.Objects;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
-public class FluidVolume extends BaseVolume {
-	private Fluid fluid = Fluids.EMPTY;
+public class FluidVolume extends Volume<Identifier, Fraction> {
+	public static final Identifier ID = AstromineCommon.identifier("fluid");
 
-	private byte signal = 0b0;
+	private Fluid fluid;
 
-	private Runnable runnable;
-
-	/**
-	 * Instantiates a Volume with an empty fraction and fluid.
-	 */
-	public FluidVolume() {}
-
-	/**
-	 * Instantiates a Volume with an empty fraction and specified fluid.
-	 */
-	public FluidVolume(Fluid fluid) {
+	protected FluidVolume(Fraction amount, Fraction size, Fluid fluid) {
+		super(ID, amount, size);
 		this.fluid = fluid;
 	}
 
-	/**
-	 * Instantiates a Volume with an specified fraction and fluid.
-	 */
-	public FluidVolume(Fluid fluid, Fraction fraction) {
+	protected FluidVolume(Fraction amount, Fraction size, Fluid fluid, Runnable runnable) {
+		super(ID, amount, size, runnable);
 		this.fluid = fluid;
-		this.fraction = fraction;
-	}
-
-	public FluidVolume(Fluid fluid, Fraction fraction, byte signal) {
-		this.fluid = fluid;
-		this.fraction = fraction;
-		this.signal = signal;
-	}
-
-	public FluidVolume(Fluid fluid, Fraction fraction, Runnable runnable) {
-		this.fluid = fluid;
-		this.fraction = fraction;
-		this.runnable = runnable;
 	}
 
 	public static FluidVolume empty() {
-		return new FluidVolume();
+		return FluidVolume.of(Fraction.EMPTY, Fluids.EMPTY);
 	}
 
 	public static FluidVolume oxygen() {
-		return new FluidVolume(AstromineFluids.OXYGEN, Fraction.BUCKET, (byte) 0b1);
+		return new FluidVolume(Fraction.BUCKET, Fraction.BUCKET, Registry.FLUID.get(AstromineCommon.identifier("oxygen")));
 	}
 
-	public static FluidVolume attached(SimpleFluidInventoryComponent component) {
-		return new FluidVolume(Fluids.EMPTY, Fraction.empty(), component::dispatchConsumers);
+	public static FluidVolume attached(SimpleFluidComponent component) {
+		return new FluidVolume(Fraction.EMPTY, Fraction.BUCKET, Fluids.EMPTY, component::updateListeners);
 	}
 
-	public static FluidVolume of(Fluid fluid, Fraction fraction) {
-		return new FluidVolume(fluid, fraction);
+	public static FluidVolume of(Fraction amount, Fluid fluid) {
+		return new FluidVolume(amount, Fraction.of(128L), fluid);
 	}
 
-	@Override
-	public void setFraction(Fraction fraction) {
-		super.setFraction(fraction);
-		if (runnable != null)
-			runnable.run();
+	public static FluidVolume of(Fraction amount, Fraction size, Fluid fluid) {
+		return new FluidVolume(amount, size, fluid);
 	}
 
-	/**
-	 * Deserializes a Volume from a tag.
-	 *
-	 * @return a Volume
-	 */
+	public static FluidVolume of(Fraction amount, Fluid fluid, Runnable runnable) {
+		return new FluidVolume(amount, Fraction.of(128L), fluid, runnable);
+	}
+
+	public static FluidVolume of(Fraction amount, Fraction size, Fluid fluid, Runnable runnable) {
+		return new FluidVolume(amount, size, fluid, runnable);
+	}
+
+	public static boolean areFluidsEqual(FluidVolume volume1, FluidVolume volume2) {
+		return Objects.equal(volume1.getFluid(), volume2.getFluid());
+	}
+
 	public static FluidVolume fromTag(CompoundTag tag) {
-		// TODO: Null checks.
-
-		FluidVolume fluidVolume = new FluidVolume(Fluids.EMPTY);
-
-		if (!tag.contains("fluid")) {
-			fluidVolume.fluid = AstromineFluids.OXYGEN;
-		} else {
-			fluidVolume.fluid = Registry.FLUID.get(new Identifier(tag.getString("fluid")));
-		}
-
-		if (!tag.contains("fraction")) {
-			fluidVolume.fraction = Fraction.empty();
-		} else {
-			fluidVolume.fraction = Fraction.fromTag(tag.getCompound("fraction"));
-		}
-
-		if (!tag.contains("size")) {
-			fluidVolume.size = Fraction.BUCKET;
-		} else {
-			fluidVolume.size = Fraction.fromTag(tag.getCompound("size"));
-		}
-
-		return fluidVolume;
+		return new FluidVolume(Fraction.fromTag(tag.getCompound("amount")), Fraction.fromTag(tag.getCompound("size")), Registry.FLUID.get(new Identifier(tag.getString("fluid"))));
 	}
 
-	/**
-	 * Serializes this Volume and its properties into a tag.
-	 *
-	 * @return a tag
-	 */
-	public CompoundTag toTag(CompoundTag tag) {
-		tag.putString("fluid", Registry.FLUID.getId(this.fluid).toString());
-		tag.put("fraction", this.fraction.toTag(new CompoundTag()));
-		tag.put("size", this.size.toTag(new CompoundTag()));
+	public static FluidVolume fromJson(JsonElement jsonElement) {
+		if (!(jsonElement instanceof JsonObject))
+			return null;
+		else {
+			JsonObject jsonObject = jsonElement.getAsJsonObject();
 
-		return tag;
+			if (!jsonObject.has("fluid"))
+				return null;
+			if (!jsonObject.has("amount")) {
+				return FluidVolume.of(Fraction.BUCKET, Registry.FLUID.get(new Identifier(jsonObject.get("fluid").getAsString())));
+			} else {
+				return FluidVolume.of(FractionUtilities.fromJson(jsonObject.get("amount")), Registry.FLUID.get(new Identifier(jsonObject.get("fluid").getAsString())));
+			}
+		}
+	}
+
+	public static FluidVolume fromPacket(PacketByteBuf buffer) {
+		if (!buffer.readBoolean()) {
+			return empty();
+		} else {
+			int id = buffer.readVarInt();
+
+			Fraction amount = FractionUtilities.fromPacket(buffer);
+			Fraction size = FractionUtilities.fromPacket(buffer);
+
+			return FluidVolume.of(amount, size, Registry.FLUID.get(id));
+		}
+	}
+
+	public boolean fluidEquals(FluidVolume volume) {
+		return Objects.equal(this.getFluid(), volume.getFluid());
 	}
 
 	public Fluid getFluid() {
@@ -151,117 +133,144 @@ public class FluidVolume extends BaseVolume {
 		this.fluid = fluid;
 	}
 
-	public <T extends BaseVolume> T insertVolume(FluidVolume volume) {
-		return (T) insertVolume(volume.getFluid(), volume.getFraction());
+	public Identifier getFluidId() {
+		return Registry.FLUID.getId(getFluid());
 	}
 
-	public <T extends BaseVolume> T insertVolume(Fluid fluid, Fraction fraction) {
-		if (this.fluid != Fluids.EMPTY && fluid != this.fluid)
-			return (T) FluidVolume.empty();
-
-		FluidVolume volume = new FluidVolume(fluid, super.insertVolume(fraction).getFraction());
-
-		if (this.fluid == Fluids.EMPTY)
-			this.fluid = fluid;
-
-		return (T) volume;
+	public boolean test(Fluid fluid) {
+		return (this.fluid == fluid && fluid != Fluids.EMPTY) || this.isEmpty();
 	}
 
-	public <T extends BaseVolume> T extractVolume(Fluid fluid, Fraction fraction) {
-		if (fluid != this.fluid)
-			return (T) FluidVolume.empty();
-
-		FluidVolume volume = new FluidVolume(this.fluid, super.extractVolume(fraction).getFraction());
-
-		if (this.fraction.equals(Fraction.empty()))
-			this.fluid = Fluids.EMPTY;
-
-		return (T) volume;
-	}
-
-	@Override
-	public <T extends BaseVolume> T extractVolume(Fraction taken) {
-		T t = (T) new FluidVolume(fluid, super.extractVolume(taken).getFraction());
-
-		if (this.fraction.equals(Fraction.empty()))
-			this.fluid = Fluids.EMPTY;
-
-		return t;
-	}
-
-	@Override
-	public <T extends BaseVolume> T insertVolume(Fraction fraction) {
-		T t = (T) new FluidVolume(fluid, super.insertVolume(fraction).getFraction());
-
-		return t;
-	}
-
-	public <T extends BaseVolume> void pullVolume(T target, Fraction pulled) {
-		if (target instanceof FluidVolume && ((FluidVolume) target).getFluid() != fluid) {
-			setFluid(((FluidVolume) target).getFluid());
-		}
-
-		if (target instanceof FluidVolume && target.getFraction().equals(Fraction.empty())) {
-			if (target.getFraction().equals(Fraction.empty())) {
-				((FluidVolume) target).setFluid(Fluids.EMPTY);
-			}
-		}
-
-		super.pullVolume(target, pulled);
-	}
-
-	public <T extends BaseVolume> void pushVolume(T target, Fraction pushed) {
-		if (target instanceof FluidVolume && ((FluidVolume) target).getFluid() != fluid) {
-			((FluidVolume) target).setFluid(fluid);
-		}
-
-		if (this.fraction.equals(Fraction.empty()))
-			this.fluid = Fluids.EMPTY;
-
-		super.pushVolume(target, pushed);
-	}
-
-	@Override
-	public boolean isFull() {
-		return hasStored(size) && this.fluid != Fluids.EMPTY;
+	public boolean test(FluidVolume volume) {
+		return volume.test(getFluid()) && volume.hasAvailable(getAmount());
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return hasAvailable(size) || this.fluid == Fluids.EMPTY;
+		return super.isEmpty() || getFluid() == Fluids.EMPTY;
 	}
 
 	@Override
-	public int hashCode() {
-		return Objects.hashCode(this.fluid, this.fraction, this.signal);
+	public <V extends Volume<Identifier, Fraction>> V add(V v, Fraction fraction) {
+		if (!(v instanceof FluidVolume))
+			return (V) this;
+
+		if (((FluidVolume) v).getFluid() != getFluid()) {
+			if (v.isEmpty()) {
+				((FluidVolume) v).setFluid((this).getFluid());
+			} else {
+				return (V) this;
+			}
+		}
+
+		Fraction amount = Fraction.minimum(v.getSize().subtract(v.getAmount()), Fraction.minimum(getAmount(), fraction));
+
+		amount.ifBiggerThan(Fraction.EMPTY, () -> {
+			v.setAmount(v.getAmount().add(amount));
+			setAmount(getAmount().subtract(amount));
+		});
+
+		if (isEmpty()) {
+			setFluid(Fluids.EMPTY);
+			setAmount(Fraction.EMPTY);
+		}
+
+		return (V) this;
 	}
 
-	public FluidVolume copy() {
-		return new FluidVolume(fluid, fraction);
+	@Override
+	public <V extends Volume<Identifier, Fraction>> V add(Fraction fraction) {
+		Fraction amount = Fraction.minimum(getSize().subtract(getAmount()), fraction);
+
+		setAmount(Fraction.add(getAmount(), amount));
+
+		return (V) this;
 	}
 
-	public boolean equalsFluid(FluidVolume volume) {
-		return this.fluid == volume.fluid;
+	@Override
+	public <V extends Volume<Identifier, Fraction>> V minus(Fraction fraction) {
+		Fraction amount = Fraction.minimum(getAmount(), fraction);
+
+		setAmount(Fraction.subtract(getAmount(), amount));
+
+		return (V) this;
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Fraction>> V moveFrom(V v, Fraction fraction) {
+		if (!(v instanceof FluidVolume))
+			return (V) this;
+
+		if (((FluidVolume) v).getFluid() != getFluid()) {
+			if (this.isEmpty()) {
+				this.setFluid(((FluidVolume) v).getFluid());
+			} else {
+				return (V) this;
+			}
+		}
+
+		v.add(this, fraction);
+
+		return (V) this;
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Fraction>> V moveFrom(V v) {
+		return moveFrom(v, v.getAmount());
+	}
+
+	@Override
+	public <V extends Volume<Identifier, Fraction>> V copy() {
+		return (V) of(getAmount().copy(), getSize().copy(), getFluid());
 	}
 
 	@Override
 	public boolean equals(Object object) {
 		if (this == object)
 			return true;
+
 		if (!(object instanceof FluidVolume))
+			return false;
+
+		if (!super.equals(object))
 			return false;
 
 		FluidVolume volume = (FluidVolume) object;
 
-		return Objects.equal(this.fluid, volume.fluid) && Objects.equal(this.fraction, volume.fraction) && this.signal == volume.signal;
+		return FluidVolume.areFluidsEqual(this, volume);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(super.hashCode(), getAmount(), getSize(), fluid);
 	}
 
 	@Override
 	public String toString() {
-		return "Volume{" + "fluid=" + this.fluid + ", fraction=" + this.fraction + '}';
+		return getAmount().toDecimalString() + " / " + getSize().toDecimalString() + " " + getFluidId();
 	}
 
-	public Identifier getFluidIdentifier() {
-		return Registry.FLUID.getId(fluid);
+	@Override
+	public CompoundTag toTag() {
+		CompoundTag tag = new CompoundTag();
+		tag.put("amount", getAmount().toTag());
+		tag.put("size", getSize().toTag());
+		tag.putString("fluid", Registry.FLUID.getId(getFluid()).toString());
+		return tag;
+	}
+
+	public PacketByteBuf toPacket(PacketByteBuf buffer) {
+		if (this.isEmpty()) {
+			buffer.writeBoolean(false);
+		} else {
+			buffer.writeBoolean(true);
+
+			buffer.writeVarInt(Registry.FLUID.getRawId(getFluid()));
+
+			FractionUtilities.toPacket(buffer, getAmount());
+			FractionUtilities.toPacket(buffer, getSize());
+		}
+
+		return buffer;
 	}
 }

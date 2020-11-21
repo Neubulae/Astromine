@@ -24,62 +24,58 @@
 
 package com.github.chainmailstudios.astromine.common.item.base;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-
-import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.world.World;
 
-import com.github.chainmailstudios.astromine.common.utilities.EnergyCapacityProvider;
-import com.github.chainmailstudios.astromine.common.utilities.EnergyUtilities;
+import com.github.chainmailstudios.astromine.common.volume.energy.EnergyVolume;
 import me.shedaniel.cloth.api.durability.bar.DurabilityBarItem;
 import team.reborn.energy.Energy;
-import team.reborn.energy.EnergyHandler;
 import team.reborn.energy.EnergyHolder;
 import team.reborn.energy.EnergyTier;
 
-import java.util.List;
+public class EnergyVolumeItem extends BaseVolumeItem<EnergyVolume> implements EnergyHolder, DurabilityBarItem {
+	private final double size;
 
-public class EnergyVolumeItem extends Item implements EnergyHolder, DurabilityBarItem, EnergyCapacityProvider {
-	private double maxAmount;
-	private boolean creative;
-
-	public EnergyVolumeItem(Settings settings, double maxAmount, boolean creative) {
+	public EnergyVolumeItem(Item.Settings settings, double size) {
 		super(settings);
-		this.maxAmount = maxAmount;
-		this.creative = creative;
+
+		this.size = size;
 	}
 
-	public static EnergyVolumeItem ofCreative(Settings settings) {
-		return new EnergyVolumeItem(settings, Integer.MAX_VALUE, true);
+	public static EnergyVolumeItem ofCreative(Item.Settings settings) {
+		return new EnergyVolumeItem(settings, Double.MAX_VALUE);
 	}
 
-	public static EnergyVolumeItem of(Settings settings, double maxAmount) {
-		return new EnergyVolumeItem(settings, maxAmount, false);
+	public static EnergyVolumeItem of(Settings settings, double size) {
+		return new EnergyVolumeItem(settings, size);
 	}
 
-	@Environment(EnvType.CLIENT)
-	@Override
-	public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-		super.appendTooltip(stack, world, tooltip, context);
-
-		EnergyHandler energyHandler = Energy.of(stack);
-		tooltip.add(EnergyUtilities.compoundDisplayColored(energyHandler.getEnergy(), energyHandler.getMaxStored()));
+	public double getSize() {
+		return size;
 	}
 
 	@Override
 	public double getMaxStoredPower() {
-		return maxAmount;
+		return getSize();
 	}
 
 	@Override
 	public EnergyTier getTier() {
-		return EnergyTier.INFINITE;
+		return EnergyTier.INSANE;
+	}
+
+	@Override
+	public double getDurabilityBarProgress(ItemStack stack) {
+		if (!Energy.valid(stack) || getMaxStoredPower() == 0)
+			return 0;
+		return 1 - Energy.of(stack).getEnergy() / getMaxStoredPower();
+	}
+
+	@Override
+	public boolean hasDurabilityBar(ItemStack stack) {
+		return true;
 	}
 
 	@Override
@@ -88,34 +84,12 @@ public class EnergyVolumeItem extends Item implements EnergyHolder, DurabilityBa
 	}
 
 	@Override
-	public double getDurabilityBarProgress(ItemStack itemStack) {
-		if (!Energy.valid(itemStack) || getMaxStoredPower() == 0)
-			return 0;
-		return 1 - Energy.of(itemStack).getEnergy() / getMaxStoredPower();
-	}
-
-	@Override
-	public boolean hasDurabilityBar(ItemStack itemStack) {
-		return !isCreative();
-	}
-
-	@Override
 	public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
 		super.appendStacks(group, stacks);
-		if (!isCreative() && this.isIn(group)) {
-			ItemStack itemStack = new ItemStack(this);
-			Energy.of(itemStack).set(getMaxStoredPower());
-			stacks.add(itemStack);
+		if (this.isIn(group)) {
+			ItemStack stack = new ItemStack(this);
+			Energy.of(stack).set(getMaxStoredPower());
+			stacks.add(stack);
 		}
-	}
-
-	@Override
-	public double getEnergyCapacity() {
-		return maxAmount;
-	}
-
-	@Override
-	public boolean isCreative() {
-		return creative;
 	}
 }

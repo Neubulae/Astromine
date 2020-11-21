@@ -29,63 +29,105 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 
 import com.github.chainmailstudios.astromine.common.block.transfer.TransferType;
+import com.github.chainmailstudios.astromine.common.callback.TransferEntryCallback;
 import com.github.chainmailstudios.astromine.common.utilities.DirectionUtilities;
-import nerdhub.cardinal.components.api.ComponentRegistry;
-import nerdhub.cardinal.components.api.ComponentType;
-import nerdhub.cardinal.components.api.component.Component;
-import org.jetbrains.annotations.NotNull;
+import com.github.chainmailstudios.astromine.registry.AstromineComponents;
+import dev.onyxstudios.cca.api.v3.component.Component;
+import dev.onyxstudios.cca.api.v3.component.ComponentKey;
+import dev.onyxstudios.cca.api.v3.component.ComponentRegistry;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
+import org.jetbrains.annotations.Nullable;
 
-import com.google.common.collect.Maps;
 import java.util.Map;
 
 public class BlockEntityTransferComponent implements Component {
-	private final Map<ComponentType<?>, TransferEntry> components = Maps.newHashMap();
+	private final Reference2ReferenceMap<ComponentKey<?>, TransferEntry> components = new Reference2ReferenceOpenHashMap<>();
 
-	public TransferEntry get(ComponentType<?> type) {
-		return components.computeIfAbsent(type, t -> new TransferEntry());
+	@Nullable
+	public static <V> BlockEntityTransferComponent get(V v) {
+		try {
+			return AstromineComponents.BLOCK_ENTITY_TRANSFER_COMPONENT.get(v);
+		} catch (Exception justShutUpAlready) {
+			return null;
+		}
 	}
 
-	public Map<ComponentType<?>, TransferEntry> get() {
+	public TransferEntry get(ComponentKey<?> type) {
+		return components.getOrDefault(type, null);
+	}
+
+	public Map<ComponentKey<?>, TransferEntry> get() {
 		return components;
 	}
 
-	public void add(ComponentType<?> type) {
-		components.put(type, new TransferEntry());
+	public void add(ComponentKey<?> type) {
+		TransferEntry entry = new TransferEntry(type);
+
+		TransferEntryCallback.EVENT.invoker().handle(entry);
+
+		components.put(type, entry);
+	}
+
+	public boolean hasItem() {
+		return components.containsKey(AstromineComponents.ITEM_INVENTORY_COMPONENT);
+	}
+
+	public boolean hasFluid() {
+		return components.containsKey(AstromineComponents.FLUID_INVENTORY_COMPONENT);
+	}
+
+	public boolean hasEnergy() {
+		return components.containsKey(AstromineComponents.ENERGY_INVENTORY_COMPONENT);
+	}
+
+	public TransferType getItem(Direction direction) {
+		return components.get(AstromineComponents.ITEM_INVENTORY_COMPONENT).get(direction);
+	}
+
+	public TransferType getFluid(Direction direction) {
+		return components.get(AstromineComponents.FLUID_INVENTORY_COMPONENT).get(direction);
+	}
+
+	public TransferType getEnergy(Direction direction) {
+		return components.get(AstromineComponents.ENERGY_INVENTORY_COMPONENT).get(direction);
 	}
 
 	@Override
-	public void fromTag(CompoundTag tag) {
+	public void readFromNbt(CompoundTag tag) {
 		CompoundTag dataTag = tag.getCompound("data");
 
 		for (String key : dataTag.getKeys()) {
 			Identifier keyId = new Identifier(key);
-			TransferEntry entry = new TransferEntry();
+			TransferEntry entry = new TransferEntry(ComponentRegistry.get(keyId));
 			entry.fromTag(dataTag.getCompound(key));
-			components.put(ComponentRegistry.INSTANCE.get(keyId), entry);
+			components.put(ComponentRegistry.get(keyId), entry);
 		}
 	}
 
 	@Override
-	public @NotNull CompoundTag toTag(CompoundTag tag) {
+	public void writeToNbt(CompoundTag tag) {
 		CompoundTag dataTag = new CompoundTag();
 
-		for (Map.Entry<ComponentType<?>, TransferEntry> entry : components.entrySet()) {
+		for (Map.Entry<ComponentKey<?>, TransferEntry> entry : components.entrySet()) {
 			dataTag.put(entry.getKey().getId().toString(), entry.getValue().toTag(new CompoundTag()));
 		}
 
 		tag.put("data", dataTag);
-
-		return tag;
 	}
 
 	public static class TransferEntry {
 		public static final Direction[] DIRECTIONS = Direction.values();
-		private final Map<Direction, TransferType> types = Maps.newHashMap();
+		private final Reference2ReferenceMap<Direction, TransferType> types = new Reference2ReferenceOpenHashMap<>(6, 1);
 
-		public TransferEntry() {
+		private final ComponentKey<?> componentKey;
+
+		public TransferEntry(ComponentKey<?> componentKey) {
 			for (Direction direction : DIRECTIONS) {
 				this.set(direction, TransferType.NONE);
 			}
+
+			this.componentKey = componentKey;
 		}
 
 		public void set(Direction direction, TransferType type) {
@@ -98,13 +140,16 @@ public class BlockEntityTransferComponent implements Component {
 
 		public void fromTag(CompoundTag tag) {
 			for (String directionKey : tag.getKeys()) {
-				types.put(DirectionUtilities.byNameOrId(directionKey), TransferType.valueOf(tag.getString(directionKey)));
+				if (tag.contains(directionKey)) {
+					types.put(DirectionUtilities.byNameOrId(directionKey), TransferType.valueOf(tag.getString(directionKey)));
+				}
 			}
 		}
 
 		public CompoundTag toTag(CompoundTag tag) {
 			for (Map.Entry<Direction, TransferType> entry : types.entrySet()) {
-				tag.putString(String.valueOf(entry.getKey().getName()), entry.getValue().toString());
+				if (entry.getValue() != TransferType.NONE)
+					tag.putString(String.valueOf(entry.getKey().getName()), entry.getValue().toString());
 			}
 
 			return tag;
@@ -117,30 +162,9 @@ public class BlockEntityTransferComponent implements Component {
 			}
 			return true;
 		}
-	}
 
-	private static class ImmutableTransferEntry extends TransferEntry {
-		private static final TransferEntry INSTANCE = new ImmutableTransferEntry();
-
-		@Override
-		public void set(Direction direction, TransferType type) {}
-
-		@Override
-		public TransferType get(Direction origin) {
-			return TransferType.NONE;
-		}
-
-		@Override
-		public void fromTag(CompoundTag tag) {}
-
-		@Override
-		public CompoundTag toTag(CompoundTag tag) {
-			return tag;
-		}
-
-		@Override
-		public boolean areAllNone() {
-			return true;
+		public ComponentKey<?> getComponentKey() {
+			return componentKey;
 		}
 	}
 }

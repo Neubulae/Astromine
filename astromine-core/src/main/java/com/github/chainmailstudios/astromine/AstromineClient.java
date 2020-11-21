@@ -28,6 +28,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
+import com.github.chainmailstudios.astromine.registry.AstromineKeybinds;
 import com.github.chainmailstudios.astromine.registry.client.*;
 
 @Environment(EnvType.CLIENT)
@@ -45,5 +46,6 @@ public class AstromineClient implements ClientModInitializer {
 		AstromineClientPackets.initialize();
 		AstromineRenderLayers.initialize();
 		AstrominePatchouliPages.initialize();
+		AstromineKeybinds.initialize();
 	}
 }

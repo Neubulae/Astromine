@@ -24,11 +24,6 @@
 
 package com.github.chainmailstudios.astromine.mixin;
 
-import com.github.chainmailstudios.astromine.AstromineCommon;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.source.BiomeLayerSampler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -36,6 +31,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
+
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.source.BiomeLayerSampler;
+
+import com.github.chainmailstudios.astromine.AstromineCommon;
 
 @Mixin(BiomeLayerSampler.class)
 public class BiomeLayerSamplerMixin {
@@ -45,7 +47,7 @@ public class BiomeLayerSamplerMixin {
 	private int storedLastBiomeId;
 
 	@Inject(method = "sample", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/biome/BuiltinBiomes;fromRawId(I)Lnet/minecraft/util/registry/RegistryKey;", ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD)
-	private void storeVariables(Registry<Biome> registry, int i, int j, CallbackInfoReturnable<Biome> cir, int k) {
+	private void astromine_storeVariables(Registry<Biome> registry, int i, int j, CallbackInfoReturnable<Biome> cir, int k) {
 		this.registry = registry;
 		storedLastBiomeId = k;
 	}
@@ -61,7 +63,7 @@ public class BiomeLayerSamplerMixin {
 	}
 
 	@Inject(method = "sample", at = @At("RETURN"))
-	private void removeStoredVariables(Registry<Biome> registry, int i, int j, CallbackInfoReturnable<Biome> cir) {
+	private void astromine_removeStoredVariables(Registry<Biome> registry, int i, int j, CallbackInfoReturnable<Biome> cir) {
 		this.registry = null;
 	}
 }

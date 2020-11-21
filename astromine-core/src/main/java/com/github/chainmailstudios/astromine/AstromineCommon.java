@@ -24,20 +24,19 @@
 
 package com.github.chainmailstudios.astromine;
 
-import blue.endless.jankson.Jankson;
-import com.github.chainmailstudios.astromine.registry.*;
-import com.google.gson.Gson;
-import me.shedaniel.cloth.api.dynamic.registry.v1.EarlyInitializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+
 import net.minecraft.util.Identifier;
+
+import blue.endless.jankson.Jankson;
+import com.github.chainmailstudios.astromine.registry.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.google.gson.Gson;
 
-public class AstromineCommon implements ModInitializer, EarlyInitializer {
+public class AstromineCommon implements ModInitializer {
 	public static final String LOG_ID = "Astromine";
 	public static final String MOD_ID = "astromine";
 
@@ -52,41 +51,15 @@ public class AstromineCommon implements ModInitializer, EarlyInitializer {
 		return new Identifier(MOD_ID, name);
 	}
 
-	public static Set<String> permutationFinder(String str) {
-		Set<String> perm = new HashSet<String>();
-		// Handling error scenarios
-		if (str == null) {
-			return null;
-		} else if (str.length() == 0) {
-			perm.add("");
-			return perm;
-		}
-		char initial = str.charAt(0); // first character
-		String rem = str.substring(1); // Full string without first character
-		Set<String> words = permutationFinder(rem);
-		for (String strNew : words) {
-			for (int i = 0; i <= strNew.length(); i++) {
-				perm.add(charInsert(strNew, initial, i));
-			}
-		}
-		return perm;
-	}
-
-	public static String charInsert(String str, char c, int j) {
-		String begin = str.substring(0, j);
-		String end = str.substring(j);
-		return begin + c + end;
-	}
-
 	@Override
 	public void onInitialize() {
 		AstromineIdentifierFixes.initialize();
-		AstromineConfig.initialize();
+		AstromineDimensions.initialize();
+		AstromineFeatures.initialize();
 		AstromineItems.initialize();
 		AstromineBlocks.initialize();
 		AstromineScreenHandlers.initialize();
 		AstromineEntityTypes.initialize();
-		AstromineComponentTypes.initialize();
 		AstromineNetworkTypes.initialize();
 		AstrominePotions.initialize();
 		AstromineBiomeSources.initialize();
@@ -104,6 +77,9 @@ public class AstromineCommon implements ModInitializer, EarlyInitializer {
 		AstromineBlockEntityTypes.initialize();
 		AstromineSoundEvents.initialize();
 		AstromineNetworkMembers.initialize();
+		AstromineCriteria.initialize();
+		AstromineFluidEffects.initialize();
+		AstromineAttributes.initialize();
 
 		if (FabricLoader.getInstance().isModLoaded("libblockattributes_fluids")) {
 			try {
@@ -112,11 +88,5 @@ public class AstromineCommon implements ModInitializer, EarlyInitializer {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	@Override
-	public void onEarlyInitialization() {
-		AstromineDimensions.initialize();
-		AstromineFeatures.initialize();
 	}
 }

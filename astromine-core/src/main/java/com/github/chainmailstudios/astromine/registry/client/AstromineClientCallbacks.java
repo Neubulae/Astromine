@@ -24,12 +24,44 @@
 
 package com.github.chainmailstudios.astromine.registry.client;
 
-import net.fabricmc.fabric.api.event.client.ClientTickCallback;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.Formatting;
+
+import com.github.chainmailstudios.astromine.common.component.inventory.FluidComponent;
+import com.github.chainmailstudios.astromine.common.item.base.EnergyVolumeItem;
+import com.github.chainmailstudios.astromine.common.item.base.FluidVolumeItem;
+import com.github.chainmailstudios.astromine.common.utilities.EnergyUtilities;
+import com.github.chainmailstudios.astromine.common.utilities.NumberUtilities;
+import com.github.chainmailstudios.astromine.common.volume.fluid.FluidVolume;
+import team.reborn.energy.EnergyHandler;
 
 public class AstromineClientCallbacks {
 	public static void initialize() {
-		ClientTickCallback.EVENT.register((client) -> {
+		ItemTooltipCallback.EVENT.register((stack, context, tooltip) -> {
+			if (stack.getItem() instanceof FluidVolumeItem) {
+				FluidComponent fluidComponent = FluidComponent.get(stack);
 
+				if (fluidComponent != null) {
+					fluidComponent.forEach((entry) -> {
+						int slot = entry.getKey();
+
+						FluidVolume volume = entry.getValue();
+
+						tooltip.add(new LiteralText(slot + " - " + NumberUtilities.shorten(volume.getAmount().doubleValue(), "") + "/" + NumberUtilities.shorten(volume.getSize().doubleValue(), "") + " " + new TranslatableText(String.format("block.%s.%s", volume.getFluidId()
+							.getNamespace(), volume.getFluidId().getPath())).getString()).formatted(Formatting.GRAY));
+					});
+				}
+			}
+		});
+
+		ItemTooltipCallback.EVENT.register((stack, context, tooltip) -> {
+			if (stack.getItem() instanceof EnergyVolumeItem) {
+				EnergyHandler handler = EnergyUtilities.ofNullable(stack);
+				tooltip.add(Math.min(tooltip.size(), 1), new LiteralText(NumberUtilities.shorten(handler.getEnergy(), "") + "/" + NumberUtilities.shorten(((EnergyVolumeItem) stack.getItem()).getMaxStoredPower(), "")).formatted(Formatting.GRAY));
+			}
 		});
 	}
 }

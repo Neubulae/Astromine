@@ -13,10 +13,13 @@
     "SuperCoder79",
     "Draylar",
     "HalfOf2",
+    "Martmists",
     "AK9"
   ],
   "contact": {
-    "sources": "https://github.com/Chainmail-Studios/Astromine"
+    "sources": "https://github.com/Chainmail-Studios/Astromine",
+    "issues": "https://github.com/Chainmail-Studios/Astromine/issues",
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/astromine-core"
   },
   "license": "MIT",
   "icon": "assets/astromine/icon.png",
@@ -25,18 +28,42 @@
     "main": ["com.github.chainmailstudios.astromine.AstromineCommon"],
     "client": ["com.github.chainmailstudios.astromine.AstromineClient"],
     "server": ["com.github.chainmailstudios.astromine.AstromineDedicated"],
-    "cloth-early-init": ["com.github.chainmailstudios.astromine.AstromineCommon"],
-    "rei_plugins": ["com.github.chainmailstudios.astromine.client.rei.AstromineREIPlugin"],
-    "modmenu": ["com.github.chainmailstudios.astromine.client.modmenu.AstromineModMenuSupport"]
+    "modmenu": ["com.github.chainmailstudios.astromine.client.modmenu.AstromineModMenuSupport"],
+    "cardinal-components-item": [
+      "com.github.chainmailstudios.astromine.registry.AstromineComponents"
+    ],
+    "cardinal-components-entity": [
+      "com.github.chainmailstudios.astromine.registry.AstromineComponents"
+    ],
+    "cardinal-components-world": [
+      "com.github.chainmailstudios.astromine.registry.AstromineComponents"
+    ],
+    "cardinal-components-chunk": [
+      "com.github.chainmailstudios.astromine.registry.AstromineComponents"
+    ],
+    "cardinal-components-block": [
+      "com.github.chainmailstudios.astromine.registry.AstromineComponents"
+    ]
   },
   "mixins": ["astromine.mixins.json"],
   "accessWidener": "astromine-core.accesswidener",
   "depends": {
-    "fabricloader": ">=0.8.7",
-    "fabric": ">=0.11.8",
-    "minecraft": ">=1.16.1"
+    "fabricloader": ">=0.9.2",
+    "fabric": ">=0.21.0",
+    "minecraft": "~1.16.2"
   },
   "custom": {
-    "modmenu:parent": "astromine"
+    "modmenu:parent": "astromine",
+    "cardinal-components": [
+      "astromine:world_network_component",
+      "astromine:chunk_atmosphere_component",
+      "astromine:world_bridge_component",
+      "astromine:item_inventory_component",
+      "astromine:fluid_inventory_component",
+      "astromine:energy_inventory_component",
+      "astromine:block_entity_transfer_component",
+      "astromine:block_entity_redstone_component",
+      "astromine:entity_oxygen_component"
+    ]
   }
 }

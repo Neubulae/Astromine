@@ -1,0 +1,12 @@
+{
+  "type": "astromine:liquid_generating",
+  "input": {
+    "tag": "c:diesel",
+    "amount": {
+      "numerator": 1,
+      "denominator": 480
+    }
+  },
+  "energy": 85,
+  "time": 1
+}

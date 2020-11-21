@@ -30,7 +30,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import com.github.chainmailstudios.astromine.AstromineCommon;
+import com.github.chainmailstudios.astromine.common.network.type.base.NetworkType;
+import com.github.chainmailstudios.astromine.common.registry.NetworkMemberRegistry;
 import com.github.chainmailstudios.astromine.common.registry.NetworkTypeRegistry;
+import com.github.chainmailstudios.astromine.common.utilities.data.position.WorldPos;
 
 import com.google.common.collect.Sets;
 import java.util.Iterator;
@@ -124,6 +127,7 @@ public class NetworkInstance implements Iterable<NetworkNode>, Tickable {
 	}
 
 	public boolean isStupidlyEmpty() {
+		this.nodes.removeIf(node -> !NetworkMemberRegistry.get(WorldPos.of(world, node.getBlockPos()), null).isNode(getType()));
 		if (this.nodes.isEmpty()) {
 			AstromineCommon.LOGGER.error("Network is empty! " + toString());
 			return true;

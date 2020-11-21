@@ -26,44 +26,69 @@ package com.github.chainmailstudios.astromine.registry;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 
-import com.github.chainmailstudios.astromine.common.component.entity.EntityOxygenComponent;
-import com.github.chainmailstudios.astromine.common.component.inventory.FluidInventoryComponent;
-import com.github.chainmailstudios.astromine.common.component.inventory.SimpleFluidInventoryComponent;
-import com.github.chainmailstudios.astromine.common.component.world.WorldAtmosphereComponent;
-import com.github.chainmailstudios.astromine.common.component.world.WorldBridgeComponent;
+import com.github.chainmailstudios.astromine.common.block.transfer.TransferType;
+import com.github.chainmailstudios.astromine.common.callback.TransferEntryCallback;
+import com.github.chainmailstudios.astromine.common.component.world.ChunkAtmosphereComponent;
 import com.github.chainmailstudios.astromine.common.component.world.WorldNetworkComponent;
-import com.github.chainmailstudios.astromine.common.item.base.FluidVolumeItem;
-import com.github.chainmailstudios.astromine.common.screenhandler.base.DefaultedBlockEntityScreenHandler;
-import nerdhub.cardinal.components.api.event.EntityComponentCallback;
-import nerdhub.cardinal.components.api.event.ItemComponentCallbackV2;
-import nerdhub.cardinal.components.api.event.WorldComponentCallback;
+import com.github.chainmailstudios.astromine.common.screenhandler.base.block.ComponentBlockEntityScreenHandler;
+import com.github.chainmailstudios.astromine.common.volume.fluid.FluidVolume;
+import me.shedaniel.cloth.api.common.events.v1.BlockPlaceCallback;
+
+import com.google.common.collect.Lists;
+import java.util.Collections;
+import java.util.List;
 
 public class AstromineCommonCallbacks {
-	@SuppressWarnings("UnstableApiUsage")
 	public static void initialize() {
-		ServerTickEvents.START_SERVER_TICK.register((server) -> {
-			// for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-			// ComponentProvider componentProvider = ComponentProvider.fromWorld(player.world);
-			//
-			// WorldAtmosphereComponent atmosphereComponent = componentProvider.getComponent(AstromineComponentTypes.WORLD_ATMOSPHERE_COMPONENT);
-			//
-			// PacketByteBuf buffer = new PacketByteBuf(Unpooled.buffer());
-			// FluidVolume volume = atmosphereComponent.get(player.getBlockPos().offset(Direction.UP));
-			//
-			// buffer.writeIdentifier(volume.getFluidIdentifier());
-			//
-			// ServerSidePacketRegistry.INSTANCE.sendToPlayer(player, AstromineCommonPackets.PRESSURE_UPDATE, buffer);
-			// }
-		});
+		BlockPlaceCallback.EVENT.register(((world, pos, state, entity, stack) -> {
+			ChunkAtmosphereComponent atmosphereComponent = ChunkAtmosphereComponent.get(world.getChunk(pos));
+
+			if (atmosphereComponent != null) {
+				BlockPos centerPos = pos;
+				BlockState centerState = world.getBlockState(centerPos);
+				FluidVolume centerVolume = atmosphereComponent.get(centerPos);
+
+				List<Direction> directions = Lists.newArrayList(Direction.values());
+
+				Collections.shuffle(directions);
+
+				for (Direction direction : directions) {
+					BlockPos sidePos = pos.offset(direction);
+					BlockState sideState = world.getBlockState(sidePos);
+
+					ChunkAtmosphereComponent sideAtmosphereComponent = atmosphereComponent;
+
+					if (!atmosphereComponent.isInChunk(sidePos)) {
+						sideAtmosphereComponent = ChunkAtmosphereComponent.get(world.getChunk(sidePos));
+					}
+
+					FluidVolume sideVolume = sideAtmosphereComponent.get(sidePos);
+
+					if (atmosphereComponent.isTraversableForDisplacement(centerState, centerPos, sideState, sidePos, centerVolume, sideVolume, direction)) {
+						sideVolume.moveFrom(centerVolume);
+						sideAtmosphereComponent.add(sidePos, sideVolume);
+
+						break;
+
+					}
+				}
+
+				atmosphereComponent.remove(centerPos);
+			}
+
+			return ActionResult.PASS;
+		}));
 
 		ServerTickEvents.START_SERVER_TICK.register((server) -> {
 			for (PlayerEntity playerEntity : server.getPlayerManager().getPlayerList()) {
-				if (playerEntity.currentScreenHandler instanceof DefaultedBlockEntityScreenHandler) {
-					DefaultedBlockEntityScreenHandler screenHandler = (DefaultedBlockEntityScreenHandler) playerEntity.currentScreenHandler;
+				if (playerEntity.currentScreenHandler instanceof ComponentBlockEntityScreenHandler) {
+					ComponentBlockEntityScreenHandler screenHandler = (ComponentBlockEntityScreenHandler) playerEntity.currentScreenHandler;
 
 					if (screenHandler.syncBlockEntity != null) {
 						screenHandler.syncBlockEntity.sync();
@@ -73,44 +98,19 @@ public class AstromineCommonCallbacks {
 			}
 		});
 
-		WorldComponentCallback.EVENT.register(((world, container) -> {
-			WorldNetworkComponent component = new WorldNetworkComponent(world);
-			container.put(AstromineComponentTypes.WORLD_NETWORK_COMPONENT, component);
+		ServerTickEvents.START_WORLD_TICK.register((world -> {
+			WorldNetworkComponent component = WorldNetworkComponent.get(world);
 
-			ServerTickEvents.START_WORLD_TICK.register((tickWorld -> {
-				if (tickWorld == component.getWorld()) {
-					component.tick();
+			if (component != null) {
+				component.tick();
+			}
+		}));
+
+		TransferEntryCallback.EVENT.register((entry) -> {
+			if (entry.getComponentKey() == AstromineComponents.ENERGY_INVENTORY_COMPONENT) {
+				for (Direction direction : Direction.values()) {
+					entry.set(direction, TransferType.INPUT_OUTPUT);
 				}
-			}));
-		}));
-
-		WorldComponentCallback.EVENT.register(((world, container) -> {
-			WorldAtmosphereComponent component = new WorldAtmosphereComponent(world);
-			container.put(AstromineComponentTypes.WORLD_ATMOSPHERE_COMPONENT, component);
-
-			ServerTickEvents.START_WORLD_TICK.register((tickWorld -> {
-				if (tickWorld == component.getWorld()) {
-					component.tick();
-				}
-			}));
-		}));
-
-		WorldComponentCallback.EVENT.register((world, container) -> {
-			WorldBridgeComponent component = new WorldBridgeComponent(world);
-			container.put(AstromineComponentTypes.WORLD_BRIDGE_COMPONENT, component);
-		});
-
-		EntityComponentCallback.register(AstromineComponentTypes.ENTITY_OXYGEN_COMPONENT, LivingEntity.class, ((entity) -> {
-			return new EntityOxygenComponent(0, entity);
-		}));
-
-		Registry.ITEM.forEach(item -> {
-			if (item instanceof FluidVolumeItem) {
-				ItemComponentCallbackV2.register(AstromineComponentTypes.FLUID_INVENTORY_COMPONENT, item, (useless, stack) -> {
-					FluidInventoryComponent component = new SimpleFluidInventoryComponent(1);
-					component.getVolume(0).setSize(((FluidVolumeItem) item).getSize());
-					return component;
-				});
 			}
 		});
 	}

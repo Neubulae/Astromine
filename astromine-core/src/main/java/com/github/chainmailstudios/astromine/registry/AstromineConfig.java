@@ -26,7 +26,6 @@ package com.github.chainmailstudios.astromine.registry;
 
 import me.sargunvohra.mcmods.autoconfig1u.AutoConfig;
 import me.sargunvohra.mcmods.autoconfig1u.ConfigData;
-import me.sargunvohra.mcmods.autoconfig1u.ConfigManager;
 import me.sargunvohra.mcmods.autoconfig1u.annotation.Config;
 import me.sargunvohra.mcmods.autoconfig1u.annotation.ConfigEntry;
 import me.sargunvohra.mcmods.autoconfig1u.serializer.JanksonConfigSerializer;
@@ -35,7 +34,7 @@ import me.sargunvohra.mcmods.autoconfig1u.shadowed.blue.endless.jankson.Comment;
 @Config(name = "astromine/config")
 public class AstromineConfig implements ConfigData {
 	@ConfigEntry.Gui.Excluded
-	public static final AstromineConfig DEFAULT = new AstromineConfig();
+	public static AstromineConfig instance;
 
 	@Comment("Whether Nuclear Warheads are enabled.")
 	public boolean nuclearWarheadEnabled = true;
@@ -135,6 +134,30 @@ public class AstromineConfig implements ConfigData {
 
 	@Comment("Energy for the Elite Presser.")
 	public double elitePresserEnergy = 65535D;
+
+	@Comment("Speed for the Primitive Wire Mill.")
+	public double primitiveWireMillSpeed = 0.5D;
+
+	@Comment("Speed for the Basic Wire Mill.")
+	public double basicWireMillSpeed = 1D;
+
+	@Comment("Speed for the Advanced Wire Mill.")
+	public double advancedWireMillSpeed = 2D;
+
+	@Comment("Speed for the Elite Wire Mill.")
+	public double eliteWireMillSpeed = 4D;
+
+	@Comment("Energy for the Primitive Wire Mill.")
+	public double primitiveWireMillEnergy = 2048D;
+
+	@Comment("Energy for the Basic Wire Mill.")
+	public double basicWireMillEnergy = 16384D;
+
+	@Comment("Energy for the Advanced Wire Mill.")
+	public double advancedWireMillEnergy = 32767D;
+
+	@Comment("Energy for the Elite Wire Mill.")
+	public double eliteWireMillEnergy = 65535D;
 
 	@Comment("Speed for the Primitive Liquid Generator.")
 	public double primitiveLiquidGeneratorSpeed = 0.5D;
@@ -244,6 +267,42 @@ public class AstromineConfig implements ConfigData {
 	@Comment("Fluid for the Elite Electrolyzer.")
 	public long eliteElectrolyzerFluid = 64L;
 
+	@Comment("Speed for the Primitive Refinery.")
+	public double primitiveRefinerySpeed = 0.5D;
+
+	@Comment("Speed for the Basic Refinery.")
+	public double basicRefinerySpeed = 1D;
+
+	@Comment("Speed for the Advanced Refinery.")
+	public double advancedRefinerySpeed = 2D;
+
+	@Comment("Speed for the Elite Refinery.")
+	public double eliteRefinerySpeed = 4D;
+
+	@Comment("Energy for the Primitive Refinery.")
+	public double primitiveRefineryEnergy = 2048D;
+
+	@Comment("Energy for the Basic Refinery.")
+	public double basicRefineryEnergy = 16384D;
+
+	@Comment("Energy for the Advanced Refinery.")
+	public double advancedRefineryEnergy = 32767D;
+
+	@Comment("Energy for the Elite Refinery.")
+	public double eliteRefineryEnergy = 65535D;
+
+	@Comment("Fluid for the Primitive Refinery.")
+	public long primitiveRefineryFluid = 4L;
+
+	@Comment("Fluid for the Basic Refinery.")
+	public long basicRefineryFluid = 8L;
+
+	@Comment("Fluid for the Advanced Refinery.")
+	public long advancedRefineryFluid = 16L;
+
+	@Comment("Fluid for the Elite Refinery.")
+	public long eliteRefineryFluid = 64L;
+
 	@Comment("Speed for the Primitive Electric Smelter.")
 	public double primitiveElectricSmelterSpeed = 0.5D;
 
@@ -304,14 +363,50 @@ public class AstromineConfig implements ConfigData {
 	@Comment("Energy for the Fluid Extractor.")
 	public double fluidExtractorEnergy = 16384D;
 
+	@Comment("Speed for the Vent.")
+	public double ventSpeed = 1D;
+
 	@Comment("Energy for the Vent.")
 	public double ventEnergy = 16384D;
 
 	@Comment("Fluid for the Vent.")
 	public long ventFluid = 16L;
 
-	@Comment("Fluid for the Tank.")
-	public long tankFluid = 16L;
+	@Comment("Fluid for the Primitive Tank.")
+	public long primitiveTankFluid = 16L;
+
+	@Comment("Speed for the Primitive Tank.")
+	public double primitiveTankSpeed = 1D;
+
+	@Comment("Fluid for the Basic Tank.")
+	public long basicTankFluid = 32L;
+
+	@Comment("Speed for the Basic Tank.")
+	public double basicTankSpeed = 2D;
+
+	@Comment("Fluid for the Advanced Tank.")
+	public long advancedTankFluid = 128L;
+
+	@Comment("Speed for the Advanced Tank.")
+	public double advancedTankSpeed = 4D;
+
+	@Comment("Fluid for the Elite Tank.")
+	public long eliteTankFluid = 256L;
+
+	@Comment("Speed for the Elite Tank.")
+	public double eliteTankSpeed = 16D;
+
+	@Comment("Speed for the Primitive Capacitor.")
+	public double primitiveCapacitorSpeed = 0.5D;
+
+	@Comment("Speed for the Basic Capacitor.")
+	public double basicCapacitorSpeed = 1D;
+
+	@Comment("Speed for the Advanced Capacitor.")
+	public double advancedCapacitorSpeed = 2D;
+
+	@Comment("Speed for the Elite Capacitor.")
+	public double eliteCapacitorSpeed = 4D;
 
 	@Comment("Energy for the Primitive Capacitor.")
 	public double primitiveCapacitorEnergy = 16384D;
@@ -341,16 +436,16 @@ public class AstromineConfig implements ConfigData {
 	public double ventEnergyConsumed = 1024D;
 
 	@Comment("Delay for the Block Placer actions (smaller is faster).")
-	public long blockPlacerTimeConsumed = 40L;
+	public long blockPlacerSpeed = 40L;
 
 	@Comment("Delay for the Block Breaker actions (smaller is faster).")
-	public long blockBreakerTimeConsumed = 40L;
+	public long blockBreakerSpeed = 40L;
 
 	@Comment("Delay for the Fluid Inserter actions (smaller is faster).")
-	public long fluidInserterTimeConsumed = 40L;
+	public long fluidInserterSpeed = 40L;
 
 	@Comment("Delay for the Fluid Extractor actions (smaller is faster).")
-	public long fluidExtractorTimeConsumed = 40L;
+	public long fluidExtractorSpeed = 40L;
 
 	@Comment("Energy for the Gravity Gauntlet.")
 	public double gravityGauntletEnergy = 16384D;
@@ -359,30 +454,132 @@ public class AstromineConfig implements ConfigData {
 	public double gravityGauntletConsumed = 1024D;
 
 	@Comment("Energy for the Drill actions.")
-	public double drillConsumed = 24D;
+	public double drillConsumed = 6D;
 
 	@Comment("Multiplier for the Drill entity hit actions.")
 	public double drillEntityHitMultiplier = 2D;
 
 	@Comment("Delay for the Fire Extinguisher sneaking actions.")
 	public int fireExtinguisherSneakingDelay = 2;
+
 	@Comment("Delay for the Fire Extinguisher standing actions.")
 	public int fireExtinguisherStandingDelay = 10;
 
-	public static AstromineConfig get() {
-		try {
-			return AutoConfig.getConfigHolder(AstromineConfig.class).getConfig();
-		} catch (RuntimeException exception) {
-			return DEFAULT;
-		}
-	}
+	@Comment("Tick rate for gas movement in the atmosphere. This is inversely correlated to gas movement speed - higher means slower. Lower numbers are also less performant, so choose wisely.")
+	public int gasTickRate = 10;
 
-	public static void initialize() {
-		AutoConfig.register(AstromineConfig.class, JanksonConfigSerializer::new);
-		try {
-			((ConfigManager<AstromineConfig>) AutoConfig.getConfigHolder(AstromineConfig.class)).save();
-		} catch (Throwable throwable) {
-			throwable.printStackTrace();
+	@Comment("Numerator for the gas decay rate fraction. It will decay gases by this fraction every gas tick.")
+	public int gasDecayNumerator = 5;
+
+	@Comment("Denominator for the gas decay rate fraction. It will decay gases by this fraction every gas tick.")
+	public int gasDecayDenominator = 1024;
+
+	@Comment("Noise threshold for Asteroid generation.")
+	public float asteroidNoiseThreshold = 0.545F;
+
+	@Comment("Threshold for Crude Oil wells.")
+	public int crudeOilThreshold = 2000;
+
+	@Comment("Whether to enable Crude Oil well generation.")
+	public boolean crudeOilWells = true;
+
+	@Comment("Whether to enable Crude Oil well generation in the Ocean biome.")
+	public boolean oceanicCrudeOilWells = true;
+
+	@Comment("Whether to enable Crude Oil well generation in the Desert biome.")
+	public boolean desertCrudeOilWells = true;
+
+	@Comment("Whether to enable Meteor generation in all dimensions, except The Nether and The End.")
+	public boolean meteorGeneration = true;
+
+	@Comment("Whether to enable Meteor generation in The Nether.")
+	public boolean netherMeteorGeneration = true;
+
+	@Comment("Whether to enable Meteor generation in The End.")
+	public boolean endMeteorGeneration = true;
+
+	@Comment("Energy for the Basic Battery.")
+	public double basicBatteryEnergy = 9000;
+
+	@Comment("Energy for the Advanced Battery.")
+	public double advancedBatteryEnergy = 24000;
+
+	@Comment("Energy for the Elite Battery.")
+	public double eliteBatteryEnergy = 64000;
+
+	@Comment("Energy for the Basic Drill.")
+	public double basicDrillEnergy = 90000;
+
+	@Comment("Energy for the Advanced Drill.")
+	public double advancedDrillEnergy = 240000;
+
+	@Comment("Energy for the Elite Drill.")
+	public double eliteDrillEnergy = 640000;
+
+	@Comment("Fluid for the Gas Canister.")
+	public long gasCanisterFluid = 8L;
+
+	@Comment("Fluid for the Pressurized Gas Canister.")
+	public long pressurizedGasCanisterFluid = 32L;
+
+	@Comment("Energy rate for the Primitive Energy Cable.")
+	public double primitiveEnergyCableEnergy = 64D;
+
+	@Comment("Energy for the Basic Energy Cable.")
+	public double basicEnergyCableEnergy = 256D;
+
+	@Comment("Energy for the Advanced Energy Cable.")
+	public double advancedEnergyCableEnergy = 1024D;
+
+	@Comment("Energy for the Elite Energy Cable.")
+	public double eliteEnergyCableEnergy = 4096D;
+
+	@Comment("Delay for the Inserter actions (smaller is faster).")
+	public int inserterSpeed = 16;
+
+	@Comment("Delay for the Fast Inserter actions (smaller is faster).")
+	public int fastInserterSpeed = 8;
+
+	@Comment("Delay for the Basic Conveyor actions (smaller is faster).")
+	public int basicConveyorSpeed = 16;
+
+	@Comment("Delay for the Advanced Conveyor actions (smaller is faster).")
+	public int advancedConveyorSpeed = 8;
+
+	@Comment("Delay for the Elite Conveyor actions (smaller is faster).")
+	public int eliteConveyorSpeed = 8;
+
+	@Comment("Fluid for the Space Suit.")
+	public long spaceSuitFluid = 64L;
+
+	@Comment("Threshold for Asteroid Ores.")
+	public int asteroidOreThreshold = 6;
+
+	@Comment("Whether AK9 should asphyxiate.")
+	public boolean asphyxiateAK9 = true;
+
+	@Comment("Fluid numerator for the Fluid Cable and inter-machine transfer.")
+	public long fluidTransferNumerator = 1;
+
+	@Comment("Fluid denominator for the Fluid Cable and inter-machine transfer.")
+	public long fluidTransferDenominator = 5;
+
+	public static AstromineConfig get() {
+		if (instance == null) {
+			try {
+				AutoConfig.register(AstromineConfig.class, JanksonConfigSerializer::new);
+				try {
+					AutoConfig.getConfigHolder(AstromineConfig.class).save();
+				} catch (Throwable throwable) {
+					throwable.printStackTrace();
+				}
+				instance = AutoConfig.getConfigHolder(AstromineConfig.class).getConfig();
+			} catch (Throwable throwable) {
+				throwable.printStackTrace();
+				instance = new AstromineConfig();
+			}
 		}
+
+		return instance;
 	}
 }

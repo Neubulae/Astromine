@@ -26,12 +26,12 @@ package com.github.chainmailstudios.astromine.foundations.registry;
 
 import net.minecraft.item.ItemGroup;
 
-import static com.github.chainmailstudios.astromine.registry.AstromineItemGroups.register;
+import com.github.chainmailstudios.astromine.registry.AstromineItemGroups;
 
-public class AstromineFoundationsItemGroups {
-	public static final ItemGroup ASTROMINE_FOUNDATIONS = register("astromine_foundations", () -> AstromineFoundationsItems.UNIVITE_AXE);
+public class AstromineFoundationsItemGroups extends AstromineItemGroups {
+	public static final ItemGroup FOUNDATIONS = register("foundations", () -> AstromineFoundationsItems.UNIVITE_AXE);
 
 	public static void initialize() {
-		// Unused.
+
 	}
 }

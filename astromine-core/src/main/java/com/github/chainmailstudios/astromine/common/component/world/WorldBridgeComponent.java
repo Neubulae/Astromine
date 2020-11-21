@@ -34,8 +34,10 @@ import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.World;
 
 import com.github.chainmailstudios.astromine.common.utilities.VoxelShapeUtilities;
+import com.github.chainmailstudios.astromine.registry.AstromineComponents;
+import dev.onyxstudios.cca.api.v3.component.Component;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
-import nerdhub.cardinal.components.api.component.Component;
+import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Sets;
 import java.util.Map;
@@ -48,6 +50,15 @@ public class WorldBridgeComponent implements Component {
 
 	public WorldBridgeComponent(World world) {
 		this.world = world;
+	}
+
+	@Nullable
+	public static <V> WorldBridgeComponent get(V v) {
+		try {
+			return AstromineComponents.WORLD_BRIDGE_COMPONENT.get(v);
+		} catch (Exception justShutUpAlready) {
+			return null;
+		}
 	}
 
 	public World getWorld() {
@@ -115,7 +126,7 @@ public class WorldBridgeComponent implements Component {
 	}
 
 	@Override
-	public CompoundTag toTag(CompoundTag tag) {
+	public void writeToNbt(CompoundTag tag) {
 		CompoundTag dataTag = new CompoundTag();
 
 		int k = 0;
@@ -142,12 +153,10 @@ public class WorldBridgeComponent implements Component {
 		}
 
 		tag.put("data", dataTag);
-
-		return tag;
 	}
 
 	@Override
-	public void fromTag(CompoundTag tag) {
+	public void readFromNbt(CompoundTag tag) {
 		CompoundTag dataTag = tag.getCompound("data");
 
 		for (String key : dataTag.getKeys()) {
